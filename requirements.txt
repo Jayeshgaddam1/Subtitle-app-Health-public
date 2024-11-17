@@ -1,0 +1,4 @@
+flask
+srt
+google-cloud-speech
+gapic-google-cloud-speech-v1
