@@ -1,0 +1,94 @@
+<!-- upload_video.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Subtitle Generator</title>
+    <style>
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Video Subtitle Generator</h1>
+    <form id="uploadForm">
+        <input type="file" id="videoFile" name="video" accept="video/*">
+        <button type="submit">Upload and Process</button>
+    </form>
+    <div id="status"></div>
+    <div id="downloadLinks"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('uploadForm');
+            const statusDiv = document.getElementById('status');
+            const downloadLinksDiv = document.getElementById('downloadLinks');
+
+            let statusCheckInterval;
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                statusDiv.textContent = 'Uploading...';
+                downloadLinksDiv.innerHTML = '';
+
+                const formData = new FormData(form);
+                
+                fetch('/upload_video', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    statusCheckInterval = setInterval(checkStatus, 2000);
+                })
+                .catch(error => {
+                    statusDiv.textContent = 'Error: ' + error.message;
+                });
+            });
+
+            function checkStatus() {
+                fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    statusDiv.textContent = data.status;
+                    if (data.status === "Complete") {
+                        clearInterval(statusCheckInterval);
+                        createDownloadLinks();
+                    } else if (data.status.startsWith("Error")) {
+                        clearInterval(statusCheckInterval);
+                        console.error(data.status);
+                    }
+                });
+            }
+
+            function createDownloadLinks() {
+                const videoLink = document.createElement('a');
+                videoLink.href = '/download_video';
+                videoLink.textContent = 'Download Video with Subtitles';
+                downloadLinksDiv.appendChild(videoLink);
+
+                downloadLinksDiv.appendChild(document.createElement('br'));
+
+                const srtLink = document.createElement('a');
+                srtLink.href = '/download_srt';
+                srtLink.textContent = 'Download SRT File';
+                downloadLinksDiv.appendChild(srtLink);
+            }
+        });
+    </script>
+</body>
+</html>
